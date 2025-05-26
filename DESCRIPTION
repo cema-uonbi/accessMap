@@ -1,0 +1,33 @@
+Package: accessMap
+Type: Package
+Title: Spatial Accessibility Analysis for Facilities
+Version: 0.1.0
+Authors@R: person("Brian", "Njuguna", 
+                  email = "brian.njuguna@cema.africa", 
+                  role = c("aut", "cre"))
+Description: Calculate and visualize spatial accessibility to facilities using 
+    travel time analysis. The package performs cost-distance calculations from 
+    facility points to population centers and creates comprehensive maps showing 
+    travel time categories. Includes default data for Kenya (population raster, 
+    transition matrix, and administrative boundaries) but can be used with 
+    custom data for any geographic region.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.2
+Roxygen: list(markdown = TRUE)
+Depends: 
+    R (>= 4.0.0)
+Imports:
+    ggplot2,
+    sf,
+    terra,
+    crayon,
+    raster,
+    gdistance,
+    data.table (>= 1.14.0),
+    cowplot,
+    ggspatial
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
