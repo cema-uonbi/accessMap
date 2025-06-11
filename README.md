@@ -37,7 +37,7 @@ devtools::install_github("cema-uonbi/accessMap")
 ### Basic Example with Default Kenya Data
 
 ``` r
-library(accessMap)
+library(accessibility)
 
 # Define facility coordinates (longitude, latitude)
 health_facilities <- matrix(c(

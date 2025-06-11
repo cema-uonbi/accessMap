@@ -210,10 +210,9 @@ accessibility <- \(
     threads = T
   ))
   temp <- raster::stack(pop, access)
-  temp_df <- data.table::as.data.table(terra::rast(temp), xy = T) |>
-    _[, data.table::setnames(.SD, c("x", "y", "ken_pop_count", "travel_time"))] |>
-    _[is.finite(travel_time)] |>
-    _[, cat_travel_time := data.table::fcase(
+  temp_df <- data.table::as.data.table(terra::rast(temp), xy = T)[, data.table::setnames(.SD, c("x", "y", "ken_pop_count", "travel_time"))
+                                                                  ] [is.finite(travel_time)
+                                                                     ][, cat_travel_time := data.table::fcase(
       travel_time <= 30,  "<=30",
       travel_time > 30 & travel_time <= 60, "31-60",
       travel_time > 60 & travel_time <= 90, "61-90",
@@ -222,10 +221,12 @@ accessibility <- \(
       default = NA_character_
     )]
   cat(crayon::blue$bold("Generating summary statistics...\n"))
-  national_summary <- data.table::copy(temp_df[, .(pop = sum(ken_pop_count, na.rm = T)), by = cat_travel_time]) |>
-    _[, percent := pop/sum(pop, na.rm = T)*1e2] |>
-    _[, data.table::setnames(.SD, c("Travel time", "Population", "Percentage of the population"))] |>
-    _[, let(
+  national_summary <- data.table::copy(
+    temp_df[, .(
+      pop = sum(ken_pop_count, na.rm = T)),
+      by = cat_travel_time])[, percent := pop/sum(pop, na.rm = T)*1e2
+                             ][, data.table::setnames(.SD, c("Travel time", "Population", "Percentage of the population"))
+                               ][, let(
       `Travel time` = factor(`Travel time`, levels = c(
         ">120",
         "91-120",
