@@ -25,9 +25,17 @@ Imports:
     crayon,
     raster,
     gdistance,
+    RColorBrewer,
+    purrr,
+    rlang,
+    viridis,
     data.table (>= 1.14.0),
     cowplot,
     ggspatial
 Suggests: 
+    knitr,
+    rmarkdown,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+VignetteBuilder: knitr
+LazyDataCompression: xz

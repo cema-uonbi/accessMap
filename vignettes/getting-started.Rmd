@@ -1,0 +1,337 @@
+---
+title: "Getting Started with accessMap"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with accessMap}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 6,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+```{r setup}
+library(accessMap)
+```
+
+# Introduction
+
+The `accessMap` package provides tools for calculating and visualizing spatial accessibility to facilities such as health centers, schools, or emergency services. It uses cost-distance analysis based on travel time and generates publication-ready maps and summary statistics.
+
+# Basic Usage
+
+## Your First Accessibility Analysis
+
+Let's start with a simple analysis using the default Kenya data:
+
+```{r basic-example}
+# Define some health facility coordinates in Kenya
+health_facilities <- matrix(c(
+  36.8219, -1.2921,
+  39.6682, -4.0435,
+  35.2834, 0.5143,
+  34.7519, 0.0236 
+), ncol = 2, byrow = TRUE)
+
+# Add column names
+colnames(health_facilities) <- c("lng", "lat")
+
+# Run accessibility analysis
+result <- accessibility(
+  points = health_facilities,
+  label = "Health Facilities",
+  name = "kenya_health_example",
+  save_files = FALSE  # Don't save files in this example
+)
+
+# View the summary statistics
+print(result$national_summary)
+```
+
+The results show how Kenya's population is distributed across different travel time bands to the nearest health facility.
+
+## Visualizing Results
+
+The package creates three types of visualizations:
+
+```{r visualizations, eval = FALSE}
+# Combined map and summary chart
+plot(result$combined_plot)
+
+# Just the accessibility map
+plot(result$map_plot)
+
+# Just the population distribution chart
+plot(result$bar_plot)
+```
+
+# Working with Built-in Data
+
+The package includes several built-in datasets for Kenya that you can access directly:
+
+```{r builtin-data, eval = FALSE}
+# Access Kenya administrative boundaries
+plot(accessMap::adm0)  # Country boundary
+plot(accessMap::adm1)  # County boundaries
+plot(accessMap::adm2)  # Sub-county boundaries
+plot(accessMap::adm3)  # Ward boundaries
+
+# View population distribution
+plot(accessMap::population_raster)
+
+# Load all default data at once
+kenya_data <- load_default_data()
+names(kenya_data) # Note, subcounty and ward shapefiles are not included in this function
+```
+
+# Custom Travel Time Categories
+
+## Default Categories
+
+By default, the package uses a 5-category system:
+
+```{r default-categories}
+# View default categories
+cats <- default_categories()
+print(cats$labels)
+print(cats$colors)
+```
+
+## Creating Custom Categories
+
+You can create custom categories for specific use cases:
+
+```{r custom-categories}
+# Emergency services (shorter time bands)
+emergency_cats <- create_categories(
+  breaks = c(0, 5, 10, 15, 30, Inf),
+  labels = c("Critical", "Urgent", "Priority", "Standard", "Remote"),
+  palette = "Reds"
+)
+
+# Auto-generate labels from breaks
+rural_cats <- create_categories(
+  breaks = c(0, 60, 120, 180, Inf) 
+)
+
+print(rural_cats$labels)
+```
+
+## Using Custom Categories
+
+```{r custom-analysis, eval = FALSE}
+# Use emergency categories for ambulance analysis
+ambulance_result <- accessibility(
+  points = ambulance_stations,
+  categories = emergency_cats,
+  label = "Ambulance Stations",
+  save_files = FALSE
+)
+```
+
+# Administrative-Level Analysis
+
+## County-Level Summaries
+
+Generate summaries for administrative units like counties:
+
+```{r admin-analysis, eval = FALSE}
+# First, get your accessibility data
+access_data <- result$processed_data
+
+# Generate county-level summary
+county_summary <- generate_admin_summary(
+  data = access_data,
+  admin_sf = accessMap::adm1,
+  admin_name_cols = "NAME_1"
+)
+
+# View results
+head(county_summary)
+
+```
+
+# Advanced Visualization
+
+## Flexible Point Styling
+
+Create sophisticated maps with different point styles:
+
+```{r advanced-styling, eval = FALSE}
+# Create facility data with attributes
+facilities_df <- data.frame(
+  lng = c(36.8, 37.0, 36.9, 35.3),
+  lat = c(-1.3, -1.5, -1.4, 0.5),
+  type = c("Hospital", "Clinic", "Hospital", "Health Center"),
+  ownership = c("Public", "Private", "Public", "Public"),
+  capacity = c(200, 50, 150, 75)
+)
+
+# Create map with color by type, shape by ownership, size by capacity
+advanced_map <- create_map(
+  data = result$processed_data,
+  points = facilities_df,
+  adm0 = accessMap::adm0,
+  adm1 = accessMap::adm1,
+  categories = result$categories,
+  point_color = "type",
+  point_shape = "ownership",
+  point_size = "capacity",
+  point_colors = c(
+    "Hospital" = "#d73027",
+    "Clinic" = "#fc8d59",
+    "Health Center" = "#fee08b"
+  ),
+  point_shapes = c("Public" = 16, "Private" = 17),
+  label = "Health Facilities"
+)
+
+plot(advanced_map)
+```
+
+## Custom Bar Charts
+
+```{r custom-bar-chart, eval = FALSE}
+# Create bar chart with custom label colors
+custom_bar <- create_bar_plot(
+  summary_dt = result$national_summary,
+  categories = result$categories,
+  show_labels = TRUE,
+  color_labels = "darkblue"
+)
+
+plot(custom_bar)
+```
+
+# Individual Function Workflow
+
+For maximum control, use individual functions:
+
+```{r individual-workflow, eval = FALSE}
+# Step 1: Load and validate data
+kenya_data <- load_default_data()
+points <- validate_points(health_facilities)
+cats <- default_categories()
+
+# Step 2: Compute accessibility surface
+travel_results <- compute_travel_cost(
+  points, 
+  kenya_data$transitionMatrix, 
+  kenya_data$populationRaster
+)
+
+# Step 3: Process data
+access_data <- process_access_data(
+  travel_results$access, 
+  travel_results$pop, 
+  cats
+)
+
+# Step 4: Generate summaries
+summary_stats <- generate_summary(access_data, cats)
+
+# Step 5: Create custom visualizations
+map_plot <- create_map(
+  access_data, points, kenya_data$adm0, kenya_data$adm1, cats,
+  point_color = "blue", 
+  point_size = 6,
+  show_scale = FALSE
+)
+
+bar_plot <- create_bar_plot(
+  summary_stats, cats, 
+  color_labels = "red"
+)
+
+combined_plot <- combine_plots(
+  map_plot, bar_plot,
+  map_width = 0.8  # Give map more space
+)
+
+# Step 6: Save with custom options
+save_outputs(
+  plots = list(
+    map_plot = map_plot,
+    bar_plot = bar_plot,
+    combined_plot = combined_plot
+  ),
+  summary_dt = summary_stats,
+  path = "./custom_outputs",
+  name = "custom_analysis",
+  save_opts = list(dpi = 300, width = 2, height = 2),
+  formats = c("png", "pdf")
+)
+```
+
+# Working with Your Own Data
+
+## Coordinate Validation
+
+The package automatically detects coordinate columns:
+
+```{r coordinate-validation}
+# Works with different column names
+coords_df1 <- data.frame(longitude = 36.8, latitude = -1.3)
+coords_df2 <- data.frame(lon = 36.8, lat = -1.3)
+coords_df3 <- data.frame(x = 36.8, y = -1.3)
+
+# All work automatically
+points1 <- validate_points(coords_df1)
+points2 <- validate_points(coords_df2)
+points3 <- validate_points(coords_df3)
+
+# Check results
+head(points1)
+```
+
+## Using Your Own Spatial Data
+
+```{r own-data, eval = FALSE}
+# For other countries/regions
+result <- accessibility(
+  points = my_facility_coordinates,
+  transitionMatrix = my_friction_surface,
+  populationRaster = my_population_data,
+  adm0 = my_country_boundary,
+  adm1 = my_admin_boundaries,
+  categories = my_custom_categories,
+  label = "My Facilities",
+  path = "./my_outputs",
+  name = "my_analysis"
+)
+```
+
+# Color Palettes
+
+## Using Different Palettes
+
+```{r palette-examples, eval = FALSE}
+# Viridis palette
+viridis_cats <- create_categories(
+  breaks = c(0, 30, 60, 90, 120, Inf),
+  palette = "viridis"
+)
+
+# ColorBrewer palette
+brewer_cats <- create_categories(
+  breaks = c(0, 30, 60, 90, 120, Inf),
+  palette = "RdYlBu",
+  direction = -1  # Reverse colors
+)
+
+# Custom colors
+custom_cats <- create_categories(
+  breaks = c(0, 30, 60, 90, 120, Inf),
+  labels = c("Excellent", "Good", "Fair", "Poor", "Very Poor"),
+  colors = c("#2166ac", "#762a83", "#af8dc3", "#e7d4e8", "#f7f7f7")
+)
+```
+

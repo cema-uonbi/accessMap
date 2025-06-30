@@ -8,41 +8,57 @@ accessibility(
   points,
   transitionMatrix = NULL,
   populationRaster = NULL,
-  label = "facilities",
   adm0 = NULL,
   adm1 = NULL,
+  categories = NULL,
+  lng_col = "lng",
+  lat_col = "lat",
+  label = "facilities",
+  show_admin = TRUE,
+  show_scale = TRUE,
   path = ".",
-  saving_list = list(dpi = 1000, width = 1, height = 1, units = "in"),
-  name = NULL
+  save_opts = list(dpi = 1000, width = 1, height = 1, units = "in"),
+  name = NULL,
+  save_files = TRUE,
+  progress = TRUE
 )
 }
 \arguments{
-\item{points}{Matrix or data frame with facility coordinates. Must contain longitude
-and latitude columns named (lng, lat) representing facility locations.}
+\item{points}{Matrix or data.frame with facility coordinates. Must contain longitude
+and latitude columns (automatically detected or specify lng_col/lat_col).}
 
 \item{transitionMatrix}{Optional TransitionLayer object for travel cost calculation.
 If NULL, uses default Kenya transition matrix based on motorized friction surface
 from the Malaria Atlas Project (https://malariaatlas.org/project-resources/accessibility-to-healthcare/).
 \strong{Important}: If providing your own transition matrix, ensure it is properly cropped
-and masked using your adm0 shapefile to avoid computational errors and ensure
+and masked using your study area boundary to avoid computational errors and ensure
 accurate results within your study area.}
 
 \item{populationRaster}{Optional population raster (SpatRaster or RasterLayer).
 If NULL, uses default Kenya WorldPop population data (https://hub.worldpop.org/geodata/summary?id=49694).}
 
-\item{label}{Character string for legend label describing the facilities
-(default: "Facilities").}
-
 \item{adm0}{Optional country/study area boundary (sf object). If NULL, uses default
-Kenya administrative boundaries (level 0) from gadm (https://gadm.org/download_country.html).}
+Kenya administrative boundaries (level 0) from GADM (https://gadm.org/download_country.html).}
 
 \item{adm1}{Optional administrative subdivision boundaries (sf object). If NULL,
-uses default Kenya administrative boundaries (level 1) from gadm (https://gadm.org/download_country.html).}
+uses default Kenya administrative boundaries (level 1) from GADM.}
 
-\item{path}{Character string specifying output directory for saved files
-(default: "." for current directory).}
+\item{categories}{Travel time categories created by create_categories() or default_categories().
+If NULL, uses default 5-category classification: "<=30", "31-60", "61-90", "91-120", ">120" minutes.}
 
-\item{saving_list}{List containing plot saving parameters:
+\item{lng_col}{Character name of longitude column in points (default: "lng"). Auto-detected if NULL.}
+
+\item{lat_col}{Character name of latitude column in points (default: "lat"). Auto-detected if NULL.}
+
+\item{label}{Character string for legend label describing the facilities (default: "facilities").}
+
+\item{show_admin}{Logical, whether to show administrative boundaries on map (default: TRUE).}
+
+\item{show_scale}{Logical, whether to show scale bar and north arrow (default: TRUE).}
+
+\item{path}{Character string specifying output directory for saved files (default: "." for current directory).}
+
+\item{save_opts}{List containing plot saving parameters:
 \itemize{
 \item dpi: Resolution for saved plots (default: 1000)
 \item width: Base width multiplier (default: 1)
@@ -51,26 +67,32 @@ uses default Kenya administrative boundaries (level 1) from gadm (https://gadm.o
 }}
 
 \item{name}{Character string for output file prefix. If NULL, uses generic names.}
+
+\item{save_files}{Logical, whether to save outputs to disk (default: TRUE).}
+
+\item{progress}{Logical, show progress messages (default: TRUE).}
 }
 \value{
 A list containing:
 \describe{
-\item{national_summary}{Data.table with population counts and percentages by
+\item{national_summary}{data.table with population counts and percentages by
 travel time category}
 \item{map_plot}{ggplot2 object showing spatial accessibility map}
 \item{bar_plot}{ggplot2 object showing population distribution by travel time}
 \item{combined_plot}{ggplot2 object combining map and bar chart}
-\item{access}{RasterLayer containing travel time values (in minutes) to nearest facility}
-\item{temp_df}{Data.table containing gridded accessibility data with coordinates,
+\item{access_raster}{RasterLayer containing travel time values (in minutes) to nearest facility}
+\item{processed_data}{data.table containing gridded accessibility data with coordinates,
 population counts, travel times, and travel time categories for further analysis}
+\item{categories}{Travel time categories used in the analysis}
+\item{points}{Validated facility coordinates matrix}
 }
 }
 \description{
 Calculates and visualizes spatial accessibility to facilities (e.g., health centers,
-veterinary clinics) using the cost-distance analysis based on travel time. The function
+veterinary clinics) using cost-distance analysis based on travel time. The function
 performs accessibility modeling by computing accumulated travel costs from facility
 locations to population centers using motorized friction surfaces, categorizes
-populations by travel time bands, and generates comprehensive visualizations
+populations by travel time bands, and generates visualizations
 including maps and summary statistics.
 
 The methodology follows established accessibility modeling frameworks as described in
@@ -81,26 +103,29 @@ transport assumptions from the Malaria Atlas Project.
 }
 \details{
 The accessibility analysis follows a standardized workflow:
-\enumerate{
-\item \strong{Cost-Distance Calculation}: Uses the gdistance package to compute accumulated
+
+\strong{1. Cost-Distance Calculation}: Uses the gdistance package to compute accumulated
 travel costs from each facility point to all population cells, accounting for
-terrain, road networks, and other mobility constraints encoded in the transition matrix. Note that
+terrain, road networks, and other mobility constraints encoded in the transition matrix.
 If more than one coordinate is supplied in points, the function calculates the minimum
-least-cost distance from any origin point.The function uses Dijkstra's algorithm (as implemented in the igraph package).
-see \link[gdistance]{accCost} for more details.
-\item \strong{Population Allocation}: Resamples population data to match the resolution of
+least-cost distance from any origin point. The function uses Dijkstra's algorithm
+(as implemented in the igraph package). See \link[gdistance]{accCost} for more details.
+
+\strong{2. Population Allocation}: Resamples population data to match the resolution of
 the accessibility surface using sum-based aggregation to preserve population counts.
-\item \strong{Travel Time Categorization}: Classifies population into five accessibility bands:
+
+\strong{3. Travel Time Categorization}: Classifies population into accessibility bands
+based on provided categories or default 5-category system:
 \itemize{
 \item <=30 minutes: High accessibility
 \item 31-60 minutes: Moderate accessibility
 \item 61-90 minutes: Low accessibility
 \item 91-120 minutes: Very low accessibility
-\item \>120 minutes: Extremely low accessibility
+\item >120 minutes: Extremely low accessibility
 }
-\item \strong{Visualization}: Creates publication-ready maps and summary charts showing
+
+\strong{4. Visualization}: Creates maps and summary charts showing
 spatial distribution of accessibility and population coverage statistics.
-}
 
 \strong{Data Requirements and Recommendations:}
 \itemize{
@@ -111,7 +136,7 @@ for motorized transport accessibility analysis.
 \item \strong{Transition Matrix}: Should incorporate realistic travel speeds for different
 land cover types, elevation constraints, and road networks. When using custom
 transition matrices, ensure proper spatial extent alignment with your study area
-by cropping and masking with the adm0 boundary to prevent edge effects and
+by cropping and masking with the study area boundary to prevent edge effects and
 computational inefficiencies.
 \item \strong{Population Data}: High-resolution gridded population data (e.g., WorldPop,
 LandScan) provides more accurate accessibility estimates than administrative
@@ -122,7 +147,7 @@ match the coordinate reference system of other input data.
 }
 \section{File Outputs}{
 
-The function automatically saves the following files to the specified path:
+When save_files = TRUE, the function automatically saves the following files to the specified path:
 \itemize{
 \item {name}_combined_plot.png: Integrated map and summary chart
 \item {name}_map_plot.png: Accessibility map only
@@ -147,27 +172,59 @@ result <- accessibility(
 print(result$national_summary)
 plot(result$combined_plot)
 
-# Custom analysis with your own data
+# Custom categories
+custom_cats <- create_categories(
+  breaks = c(0, 15, 30, 60, Inf),
+  labels = c("Immediate", "Quick", "Moderate", "Slow"),
+  palette = "viridis"
+)
+
+result <- accessibility(
+  points = facility_coords,
+  categories = custom_cats,
+  name = "custom_access"
+)
+
+# Using your own data
 result <- accessibility(
   points = my_facilities,
-  transitionMatrix = my_transition,  # Ensure cropped/masked with adm0
+  transitionMatrix = my_transition,  # Ensure cropped/masked with study area
   populationRaster = my_population,
   adm0 = my_country_boundary,
   adm1 = my_admin_boundaries,
   label = "Veterinary Clinics",
   path = "./outputs",
-  saving_list = list(dpi = 300, width = 1.5, height = 1.5),
+  save_opts = list(dpi = 300, width = 1.5, height = 1.5, units = "in"),
   name = "veterinary_access"
 )
 
-# High-resolution outputs
+# High-resolution outputs without admin boundaries
 result <- accessibility(
   points = facility_coords,
-  saving_list = list(dpi = 2000, width = 2, height = 2),
+  show_admin = FALSE,
+  save_opts = list(dpi = 2000, width = 2, height = 2, units = "in"),
   name = "high_res_analysis"
 )
-}
 
+# Workflow using individual functions for more control
+# Step 1: Load and validate data
+kenya_data <- load_default_data()
+pts <- validate_points(facility_coords)
+cats <- default_categories()
+
+# Step 2: Compute accessibility
+travel_results <- compute_travel_cost(pts, kenya_data$transitionMatrix, 
+                                     kenya_data$populationRaster)
+
+# Step 3: Process data
+access_dt <- process_access_data(travel_results$access, travel_results$pop, cats)
+
+# Step 4: Generate summaries and visualizations
+summary_stats <- generate_summary(access_dt, cats)
+map_plot <- create_map(access_dt, pts, kenya_data$adm0, kenya_data$adm1, cats)
+bar_plot <- create_bar_plot(summary_stats, cats)
+combined_plot <- combine_plots(map_plot, bar_plot)
+}
 }
 \references{
 Pfeffer, D. A., Lucas, T. C., May, D., Harris, J., Rozier, J., Twohig, K. A.,

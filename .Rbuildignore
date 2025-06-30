@@ -1,3 +1,11 @@
-^accessMap\.Rproj$
+^.*\.Rproj$
 ^\.Rproj\.user$
+^README\.Rmd$
+^README\.html$
+^data-raw$
+^\.github$
 ^LICENSE\.md$
+^doc$
+.*\.png$
+.*\.csv$
+^Meta$
