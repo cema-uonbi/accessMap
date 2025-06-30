@@ -19,7 +19,7 @@ accessibility(
   path = ".",
   save_opts = list(dpi = 1000, width = 1, height = 1, units = "in"),
   name = NULL,
-  save_files = TRUE,
+  save_files = F,
   progress = TRUE
 )
 }
@@ -165,7 +165,8 @@ colnames(facility_coords) <- c("lng", "lat")
 result <- accessibility(
   points = facility_coords,
   label = "Health Facilities",
-  name = "kenya_health_access"
+  name = "kenya_health_access",
+  save_files = FALSE 
 )
 
 # View results
@@ -195,7 +196,8 @@ result <- accessibility(
   label = "Veterinary Clinics",
   path = "./outputs",
   save_opts = list(dpi = 300, width = 1.5, height = 1.5, units = "in"),
-  name = "veterinary_access"
+  name = "veterinary_access",
+  save_files = FALSE
 )
 
 # High-resolution outputs without admin boundaries
@@ -203,7 +205,8 @@ result <- accessibility(
   points = facility_coords,
   show_admin = FALSE,
   save_opts = list(dpi = 2000, width = 2, height = 2, units = "in"),
-  name = "high_res_analysis"
+  name = "high_res_analysis",
+  save_files = FALSE
 )
 
 # Workflow using individual functions for more control
