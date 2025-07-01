@@ -20,7 +20,13 @@ create_categories(
 
 \item{colors}{Named character vector of colors for each category}
 
-\item{palette}{Character name of color palette ("viridis", "plasma", "blues", etc.)}
+\item{palette}{Character name of color palette. Supported options:
+\describe{
+\item{Viridis palettes}{"viridis", "plasma", "inferno", "magma", "cividis"}
+\item{Base R palettes}{"heat.colors", "terrain.colors", "topo.colors", "cm.colors", "rainbow"}
+\item{ColorBrewer palettes}{Any valid ColorBrewer palette name (e.g., "GnBu", "RdYlBu", "Set1", "Dark2").
+See RColorBrewer::brewer.pal.info for all available options.}
+}}
 
 \item{direction}{Sets the order of colors in the scale. If 1, the default, colors are ordered from darkest to lightest. If -1, the order of colors is reversed.}
 

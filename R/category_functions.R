@@ -35,7 +35,13 @@ default_categories <- function() {
 #' @param breaks Numeric vector of break points (must start with 0, end with Inf)
 #' @param labels Character vector of category labels (optional - will auto-generate if NULL)
 #' @param colors Named character vector of colors for each category
-#' @param palette Character name of color palette ("viridis", "plasma", "blues", etc.)
+#' @param palette Character name of color palette. Supported options:
+#'   \describe{
+#'     \item{Viridis palettes}{"viridis", "plasma", "inferno", "magma", "cividis"}
+#'     \item{Base R palettes}{"heat.colors", "terrain.colors", "topo.colors", "cm.colors", "rainbow"}
+#'     \item{ColorBrewer palettes}{Any valid ColorBrewer palette name (e.g., "GnBu", "RdYlBu", "Set1", "Dark2").
+#'     See RColorBrewer::brewer.pal.info for all available options.}
+#'   }
 #' @param direction Sets the order of colors in the scale. If 1, the default, colors are ordered from darkest to lightest. If -1, the order of colors is reversed.
 #' @param label_format Character specifying label format: "range" (default), "threshold", or "ordinal"
 #'
@@ -147,38 +153,72 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
 
   if (!is.null(palette)) {
     colors <- switch(palette,
+                     # Viridis palettes
                      "viridis" = viridis::viridis(length(labels), direction = direction),
                      "plasma" = viridis::plasma(length(labels), direction = direction),
                      "inferno" = viridis::inferno(length(labels), direction = direction),
                      "magma" = viridis::magma(length(labels), direction = direction),
                      "cividis" = viridis::cividis(length(labels), direction = direction),
-                     "blues" = {
-                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Blues")
+
+                     # Base R color functions
+                     "heat.colors" = {
+                       cols <- heat.colors(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
-                     "reds" = {
-                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Reds")
+                     "terrain.colors" = {
+                       cols <- terrain.colors(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
-                     "spectral" = {
-                       cols <- RColorBrewer::brewer.pal(min(length(labels), 11), "Spectral")
+                     "topo.colors" = {
+                       cols <- topo.colors(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
-                     "greens" = {
-                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Greens")
+                     "cm.colors" = {
+                       cols <- cm.colors(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
-                     "oranges" = {
-                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Oranges")
-                       if (direction == -1) rev(cols) else cols
-                     },
-                     "purples" = {
-                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Purples")
-                       if (direction == -1) rev(cols) else cols
-                     },
-                     {
+                     "rainbow" = {
                        cols <- rainbow(length(labels))
                        if (direction == -1) rev(cols) else cols
+                     },
+
+                     # Default: Try as ColorBrewer palette
+                     {
+                       # Check if it's a valid ColorBrewer palette
+                       if (requireNamespace("RColorBrewer", quietly = TRUE)) {
+                         # Get all available ColorBrewer palettes
+                         all_palettes <- rownames(RColorBrewer::brewer.pal.info)
+
+                         if (palette %in% all_palettes) {
+                           # Get max colors for this palette
+                           max_colors <- RColorBrewer::brewer.pal.info[palette, "maxcolors"]
+                           n_colors <- min(length(labels), max_colors)
+
+                           # Handle case where we need more colors than available
+                           if (length(labels) > max_colors) {
+                             warning("Palette '", palette, "' only supports ", max_colors,
+                                     " colors, but ", length(labels), " are needed. ",
+                                     "Using interpolation to generate additional colors.")
+                             # Use colorRampPalette for interpolation
+                             base_colors <- RColorBrewer::brewer.pal(max_colors, palette)
+                             cols <- colorRampPalette(base_colors)(length(labels))
+                           } else {
+                             # Use the palette directly
+                             cols <- RColorBrewer::brewer.pal(max(3, n_colors), palette)[1:length(labels)]
+                           }
+
+                           if (direction == -1) rev(cols) else cols
+                         } else {
+                           warning("Unknown palette '", palette, "'. Available ColorBrewer palettes: ",
+                                   paste(all_palettes, collapse = ", "), ". Using rainbow colors.")
+                           cols <- rainbow(length(labels))
+                           if (direction == -1) rev(cols) else cols
+                         }
+                       } else {
+                         warning("RColorBrewer package not available. Using rainbow colors.")
+                         cols <- rainbow(length(labels))
+                         if (direction == -1) rev(cols) else cols
+                       }
                      }
     )
     names(colors) <- labels
