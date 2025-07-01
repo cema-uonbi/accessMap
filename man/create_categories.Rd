@@ -9,6 +9,7 @@ create_categories(
   labels = NULL,
   colors = NULL,
   palette = NULL,
+  direction = 1,
   label_format = "range"
 )
 }
@@ -20,6 +21,8 @@ create_categories(
 \item{colors}{Named character vector of colors for each category}
 
 \item{palette}{Character name of color palette ("viridis", "plasma", "blues", etc.)}
+
+\item{direction}{Sets the order of colors in the scale. If 1, the default, colors are ordered from darkest to lightest. If -1, the order of colors is reversed.}
 
 \item{label_format}{Character specifying label format: "range" (default), "threshold", or "ordinal"}
 }
@@ -53,5 +56,12 @@ cats <- create_categories(
   label_format = "ordinal"
 )
 # Labels: "Category 1", "Category 2", "Category 3", "Category 4"
+
+# Reverse palette direction
+cats <- create_categories(
+  breaks = c(0, 30, 60, 120, Inf),
+  palette = "viridis",
+  direction = -1
+)
 
 }

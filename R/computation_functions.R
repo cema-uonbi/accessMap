@@ -32,8 +32,8 @@
 #'
 #' @export
 compute_travel_cost <- function(points,
-                                transitionMatrix,
-                                populationRaster,
+                                transitionMatrix = NULL,
+                                populationRaster = NULL,
                                 progress = TRUE) {
   if (progress) {
     cat(crayon::blue$bold("Computing travel costs...\n"))

@@ -6,8 +6,8 @@
 \usage{
 compute_travel_cost(
   points,
-  transitionMatrix,
-  populationRaster,
+  transitionMatrix = NULL,
+  populationRaster = NULL,
   progress = TRUE
 )
 }

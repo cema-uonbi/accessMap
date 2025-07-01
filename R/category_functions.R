@@ -36,6 +36,7 @@ default_categories <- function() {
 #' @param labels Character vector of category labels (optional - will auto-generate if NULL)
 #' @param colors Named character vector of colors for each category
 #' @param palette Character name of color palette ("viridis", "plasma", "blues", etc.)
+#' @param direction Sets the order of colors in the scale. If 1, the default, colors are ordered from darkest to lightest. If -1, the order of colors is reversed.
 #' @param label_format Character specifying label format: "range" (default), "threshold", or "ordinal"
 #'
 #' @return List with validated breaks, labels, and colors
@@ -64,9 +65,16 @@ default_categories <- function() {
 #' )
 #' # Labels: "Category 1", "Category 2", "Category 3", "Category 4"
 #'
+#' # Reverse palette direction
+#' cats <- create_categories(
+#'   breaks = c(0, 30, 60, 120, Inf),
+#'   palette = "viridis",
+#'   direction = -1
+#' )
+#'
 #' @export
 create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NULL,
-                              label_format = "range") {
+                              direction = 1, label_format = "range") {
   if (length(breaks) < 2) {
     stop("breaks must have at least 2 elements")
   }
@@ -78,6 +86,12 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
   if (!is.infinite(breaks[length(breaks)])) {
     warning("Last break should typically be Inf")
   }
+
+  # Validate direction parameter
+  if (!direction %in% c(1, -1)) {
+    stop("direction must be 1 or -1")
+  }
+
   if (is.null(labels)) {
     n_categories <- length(breaks) - 1
     labels <- switch(label_format,
@@ -133,13 +147,39 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
 
   if (!is.null(palette)) {
     colors <- switch(palette,
-                     "viridis" = viridis::viridis(length(labels)),
-                     "plasma" = viridis::plasma(length(labels)),
-                     "inferno" = viridis::inferno(length(labels)),
-                     "blues" = RColorBrewer::brewer.pal(min(length(labels), 9), "Blues"),
-                     "reds" = RColorBrewer::brewer.pal(min(length(labels), 9), "Reds"),
-                     "spectral" = RColorBrewer::brewer.pal(min(length(labels), 11), "Spectral"),
-                     rainbow(length(labels))
+                     "viridis" = viridis::viridis(length(labels), direction = direction),
+                     "plasma" = viridis::plasma(length(labels), direction = direction),
+                     "inferno" = viridis::inferno(length(labels), direction = direction),
+                     "magma" = viridis::magma(length(labels), direction = direction),
+                     "cividis" = viridis::cividis(length(labels), direction = direction),
+                     "blues" = {
+                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Blues")
+                       if (direction == -1) rev(cols) else cols
+                     },
+                     "reds" = {
+                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Reds")
+                       if (direction == -1) rev(cols) else cols
+                     },
+                     "spectral" = {
+                       cols <- RColorBrewer::brewer.pal(min(length(labels), 11), "Spectral")
+                       if (direction == -1) rev(cols) else cols
+                     },
+                     "greens" = {
+                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Greens")
+                       if (direction == -1) rev(cols) else cols
+                     },
+                     "oranges" = {
+                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Oranges")
+                       if (direction == -1) rev(cols) else cols
+                     },
+                     "purples" = {
+                       cols <- RColorBrewer::brewer.pal(min(length(labels), 9), "Purples")
+                       if (direction == -1) rev(cols) else cols
+                     },
+                     {
+                       cols <- rainbow(length(labels))
+                       if (direction == -1) rev(cols) else cols
+                     }
     )
     names(colors) <- labels
   }
@@ -149,6 +189,7 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
     default_colors <- c("#f7fbff", "#c6dbef", "#6baed6", "#2171b5", "#08306b",
                         "#253494", "#081d58", "#2c7fb8", "#41b6c4", "#c7e9b4")
     colors <- rep(default_colors, length.out = n_cats)
+    if (direction == -1) colors <- rev(colors)
     names(colors) <- labels
   }
 
@@ -161,7 +202,8 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
       breaks = breaks,
       labels = labels,
       colors = colors,
-      label_format = if(is.null(labels)) label_format else "custom"
+      label_format = if(is.null(labels)) label_format else "custom",
+      direction = direction
     ),
     class = "travel_categories"
   )
