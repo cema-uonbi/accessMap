@@ -123,7 +123,12 @@ get_admin_boundaries <- function(level = 1) {
 #' points <- validate_points(coords_df)
 #'
 #' @export
-validate_points <- function(points, lng_col = NULL, lat_col = NULL) {
+validate_points <- function(points,
+                            lng_col = NULL,
+                            lat_col = NULL) {
+  if (inherits(points, "data.table")) {
+    points <- as.data.frame(points)
+  }
   if (inherits(points, "sf")) {
     coords <- sf::st_coordinates(points)
     points <- matrix(coords[, 1:2], ncol = 2)
@@ -135,7 +140,11 @@ validate_points <- function(points, lng_col = NULL, lat_col = NULL) {
         colnames(points) <- c("lng", "lat")
       } else if (!is.null(lng_col) && !is.null(lat_col)) {
         if (!all(c(lng_col, lat_col) %in% names(points))) {
-          stop("Columns '", lng_col, "' and '", lat_col, "' not found in data")
+          stop("Columns '",
+               lng_col,
+               "' and '",
+               lat_col,
+               "' not found in data")
         }
         points <- as.matrix(points[, c(lng_col, lat_col)])
         colnames(points) <- c("lng", "lat")
@@ -145,7 +154,11 @@ validate_points <- function(points, lng_col = NULL, lat_col = NULL) {
     } else if (ncol(points) > 2) {
       if (!is.null(lng_col) && !is.null(lat_col)) {
         if (!all(c(lng_col, lat_col) %in% names(points))) {
-          stop("Columns '", lng_col, "' and '", lat_col, "' not found in data")
+          stop("Columns '",
+               lng_col,
+               "' and '",
+               lat_col,
+               "' not found in data")
         }
         points <- as.matrix(points[, c(lng_col, lat_col)])
         colnames(points) <- c("lng", "lat")
@@ -159,7 +172,7 @@ validate_points <- function(points, lng_col = NULL, lat_col = NULL) {
     if (!inherits(points, "matrix")) {
       points <- as.matrix(points)
     }
-
+    
     if (ncol(points) != 2) {
       stop("Points must have exactly 2 columns (longitude, latitude)")
     }
