@@ -8,4 +8,9 @@ if (getRversion() >= "2.15.1") {
   ))
 }
 
+.onAttach <- function(libname, pkgname) {
+  if (!isNamespaceLoaded("sf")) {
+    requireNamespace("sf", quietly = TRUE)
+  }
+}
 .datatable.aware <- TRUE
