@@ -20,7 +20,9 @@ accessibility(
   save_opts = list(dpi = 1000, width = 1, height = 1, units = "in"),
   name = NULL,
   save_files = F,
-  progress = TRUE
+  progress = TRUE,
+  generate_admin_summary = FALSE,
+  ...
 )
 }
 \arguments{
@@ -71,12 +73,26 @@ If NULL, uses default 5-category classification: "<=30", "31-60", "61-90", "91-1
 \item{save_files}{Logical, whether to save outputs to disk (default: TRUE).}
 
 \item{progress}{Logical, show progress messages (default: TRUE).}
+
+\item{generate_admin_summary}{Logical, whether to generate administrative unit summaries (default: FALSE).}
+
+\item{...}{Additional arguments passed to individual functions:
+\itemize{
+\item For \code{generate_admin_summary()}: admin_name_cols, admin_code_cols
+\item For \code{create_map()}: point_color, point_shape, point_size,
+point_colors, point_shapes, show_point_legend
+\item For \code{create_bar_plot()}: show_labels, color_labels
+\item For \code{combine_plots()}: map_width, bar_position
+\item For \code{save_outputs()}: formats
+}}
 }
 \value{
 A list containing:
 \describe{
 \item{national_summary}{data.table with population counts and percentages by
 travel time category}
+\item{admin_summary}{data.table with population counts and percentages by
+travel time category for each administrative unit (only if generate_admin_summary = TRUE)}
 \item{map_plot}{ggplot2 object showing spatial accessibility map}
 \item{bar_plot}{ggplot2 object showing population distribution by travel time}
 \item{combined_plot}{ggplot2 object combining map and bar chart}
@@ -153,6 +169,7 @@ When save_files = TRUE, the function automatically saves the following files to 
 \item {name}_map_plot.png: Accessibility map only
 \item {name}_bar_plot.png: Summary bar chart only
 \item {name}_national_summary.csv: Summary statistics table
+\item {name}_admin_summary.csv: Administrative summary statistics (if generate_admin_summary = TRUE)
 }
 }
 
@@ -227,6 +244,20 @@ summary_stats <- generate_summary(access_dt, cats)
 map_plot <- create_map(access_dt, pts, kenya_data$adm0, kenya_data$adm1, cats)
 bar_plot <- create_bar_plot(summary_stats, cats)
 combined_plot <- combine_plots(map_plot, bar_plot)
+
+# With custom styling
+result <- accessibility(
+  points = facility_coords,
+  point_color = "blue",           # passed to create_map()
+  show_labels = FALSE,            # passed to create_bar_plot()
+  map_width = 0.8                 # passed to combine_plots()
+)
+
+result <- accessibility(
+  points = facility_coords,
+  generate_admin_summary = TRUE,
+  admin_name_cols = "NAME_1"  # County names
+)
 }
 }
 \references{

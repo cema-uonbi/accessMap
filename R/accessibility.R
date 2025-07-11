@@ -46,11 +46,23 @@
 #' @param name Character string for output file prefix. If NULL, uses generic names.
 #' @param save_files Logical, whether to save outputs to disk (default: TRUE).
 #' @param progress Logical, show progress messages (default: TRUE).
+#' @param generate_admin_summary Logical, whether to generate administrative unit summaries (default: FALSE).
+#' @param ... Additional arguments passed to individual functions:
+#'   \itemize{
+#'     \item For \code{generate_admin_summary()}: admin_name_cols, admin_code_cols
+#'     \item For \code{create_map()}: point_color, point_shape, point_size, 
+#'           point_colors, point_shapes, show_point_legend
+#'     \item For \code{create_bar_plot()}: show_labels, color_labels
+#'     \item For \code{combine_plots()}: map_width, bar_position
+#'     \item For \code{save_outputs()}: formats
+#'   }
 #'
 #' @return A list containing:
 #' \describe{
 #'   \item{national_summary}{data.table with population counts and percentages by
 #'     travel time category}
+#'   \item{admin_summary}{data.table with population counts and percentages by
+#'     travel time category for each administrative unit (only if generate_admin_summary = TRUE)}
 #'   \item{map_plot}{ggplot2 object showing spatial accessibility map}
 #'   \item{bar_plot}{ggplot2 object showing population distribution by travel time}
 #'   \item{combined_plot}{ggplot2 object combining map and bar chart}
@@ -114,6 +126,7 @@
 #'   \item {name}_map_plot.png: Accessibility map only
 #'   \item {name}_bar_plot.png: Summary bar chart only
 #'   \item {name}_national_summary.csv: Summary statistics table
+#'   \item {name}_admin_summary.csv: Administrative summary statistics (if generate_admin_summary = TRUE)
 #' }
 #'
 #' @references
@@ -203,6 +216,20 @@
 #' map_plot <- create_map(access_dt, pts, kenya_data$adm0, kenya_data$adm1, cats)
 #' bar_plot <- create_bar_plot(summary_stats, cats)
 #' combined_plot <- combine_plots(map_plot, bar_plot)
+#' 
+#' # With custom styling
+#' result <- accessibility(
+#'   points = facility_coords,
+#'   point_color = "blue",           # passed to create_map()
+#'   show_labels = FALSE,            # passed to create_bar_plot()
+#'   map_width = 0.8                 # passed to combine_plots()
+#' )
+#' 
+#' result <- accessibility(
+#'   points = facility_coords,
+#'   generate_admin_summary = TRUE,
+#'   admin_name_cols = "NAME_1"  # County names
+#' )
 #' }
 #' @export
 accessibility <- function(points,
@@ -220,7 +247,10 @@ accessibility <- function(points,
                           save_opts = list(dpi = 1000, width = 1, height = 1, units = "in"),
                           name = NULL,
                           save_files = F,
-                          progress = TRUE) {
+                          progress = TRUE,
+                          generate_admin_summary = FALSE,
+                          ...
+                          ) {
   
   if (progress) {
     cat(crayon::blue$bold("Starting accessibility analysis...\n"))
@@ -240,45 +270,77 @@ accessibility <- function(points,
   if (is.null(categories)) {
     categories <- default_categories()
   }
-  travel_results <- compute_travel_cost(points, transitionMatrix, 
-                                        populationRaster, progress)
-  processed_data <- process_access_data(travel_results$access, 
-                                        travel_results$pop, categories)
+  travel_results <- compute_travel_cost(points, transitionMatrix, populationRaster, progress)
+  processed_data <- process_access_data(travel_results$access, travel_results$pop, categories)
   national_summary <- generate_summary(processed_data, categories, progress)
+  admin_summary <- NULL
+  if (generate_admin_summary & !is.null(adm1)) {
+    admin_summary <- .call_args(
+      generate_admin_summary,
+      base_args = list(
+        data = processed_data,
+        admin_sf = adm1,
+        progress = progress
+      ),
+      valid_extra_args = c('admin_name_cols', 'admin_code_cols'),
+      ...
+    )
+  }
   if (progress) {
     cat(crayon::blue$bold("Creating visualizations...\n"))
   }
-  map_plot <- create_map(
-    data = processed_data,
-    points = points,
-    adm0 = adm0,
-    adm1 = adm1,
-    categories = categories,
-    label = label,
-    show_admin = show_admin,
-    show_scale = show_scale
+  map_plot <- .call_args(
+    create_map,
+    base_args = list(
+      data = processed_data,
+      points = points,
+      adm0 = adm0,
+      adm1 = adm1,
+      categories = categories,
+      label = label,
+      show_admin = show_admin,
+      show_scale = show_scale
+    ),
+    valid_extra_args = c(
+      "point_color",
+      "point_shape",
+      "point_size",
+      "point_colors",
+      "point_shapes",
+      "show_point_legend"
+    ),
+    ...
   )
-  bar_plot <- create_bar_plot(national_summary, categories)
-  
+  bar_plot <- .call_args(
+    create_bar_plot,
+    base_args = list(national_summary, categories),
+    valid_extra_args = c("show_labels", "color_labels", "title"),
+    ...
+  )
   if (progress) {
     cat(crayon::blue$bold("Combining visualizations...\n"))
   }
   combined_plot <- combine_plots(map_plot, bar_plot)
-  
-  # Step 6: Save outputs if requested
   if (save_files) {
-    plots <- list(
-      map_plot = map_plot,
-      bar_plot = bar_plot,
-      combined_plot = combined_plot
+    plots <- list(map_plot = map_plot,
+                  bar_plot = bar_plot,
+                  combined_plot = combined_plot)
+    
+    .call_args(
+      save_outputs,
+      base_args = list(plots, national_summary, path, name, save_opts),
+      valid_extra_args = c("formats"),
+      ...
     )
-    save_outputs(plots, national_summary, path, name, save_opts)
+    if (!is.null(admin_summary)) {
+      admin_file <- file.path(path, paste0(name %||% "accessibility", "_admin_summary.csv"))
+      data.table::fwrite(admin_summary, file = admin_file)
+    }
   }
-  
   if (progress) {
     cat(crayon::green$bold("Accessibility analysis completed successfully!\n"))
   }
-  return(list(
+  result <- list(
     national_summary = national_summary,
     map_plot = map_plot,
     bar_plot = bar_plot,
@@ -287,5 +349,30 @@ accessibility <- function(points,
     processed_data = processed_data,
     categories = categories,
     points = points
-  ))
+  )
+  if (!is.null(admin_summary)) {
+    result$admin_summary <- admin_summary
+  }
+  return(result)
+}
+
+#' Helper function to call functions with filtered arguments
+#' 
+#' @description
+#' Clean helper that handles the rlang magic internally. This keeps the main
+#' function readable while providing the benefits of rlang.
+#'
+#' @param fun Function to call
+#' @param base_args Named list of base arguments
+#' @param valid_extra_args Character vector of valid extra argument names
+#' @param ... Additional arguments from the user
+#' @return Result of function call
+#' @keywords internal
+#' @noRd
+.call_args <- function(fun, base_args, valid_extra_args, ...) {
+  extra_args <- rlang::enquos(...)
+  filtered_extra <- extra_args[intersect(names(extra_args), valid_extra_args)]
+  all_args <- c(base_args, filtered_extra)
+  call_obj <- rlang::call2(.fn = substitute(fun), !!!all_args)
+  rlang::eval_tidy(call_obj)
 }

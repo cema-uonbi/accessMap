@@ -110,7 +110,6 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
                          }
                        })
                      },
-
                      "threshold" = {
                        sapply(1:n_categories, function(i) {
                          if (i == 1) {
@@ -122,12 +121,9 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
                          }
                        })
                      },
-
                      "ordinal" = {
                        paste("Category", 1:n_categories)
                      },
-
-                     # Default to range if unknown format
                      {
                        warning("Unknown label_format. Using 'range' format.")
                        sapply(1:n_categories, function(i) {
@@ -140,70 +136,53 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
                      }
     )
   }
-
-  # Validate labels length
   if (length(breaks) != length(labels) + 1) {
     stop("breaks must be one element longer than labels")
   }
-
-  # Handle colors and palette
   if (!is.null(colors) && !is.null(palette)) {
     stop("Provide either 'colors' or 'palette', but not both")
   }
-
   if (!is.null(palette)) {
     colors <- switch(palette,
-                     # Viridis palettes
                      "viridis" = viridis::viridis(length(labels), direction = direction),
                      "plasma" = viridis::plasma(length(labels), direction = direction),
                      "inferno" = viridis::inferno(length(labels), direction = direction),
                      "magma" = viridis::magma(length(labels), direction = direction),
                      "cividis" = viridis::cividis(length(labels), direction = direction),
-
-                     # Base R color functions
                      "heat.colors" = {
-                       cols <- heat.colors(length(labels))
+                       cols <- grDevices::heat.colors(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
                      "terrain.colors" = {
-                       cols <- terrain.colors(length(labels))
+                       cols <- grDevices::terrain.colors(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
                      "topo.colors" = {
-                       cols <- topo.colors(length(labels))
+                       cols <- grDevices::topo.colors(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
                      "cm.colors" = {
-                       cols <- cm.colors(length(labels))
+                       cols <- grDevices::cm.colors(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
                      "rainbow" = {
                        cols <- rainbow(length(labels))
                        if (direction == -1) rev(cols) else cols
                      },
-
-                     # Default: Try as ColorBrewer palette
                      {
-                       # Check if it's a valid ColorBrewer palette
                        if (requireNamespace("RColorBrewer", quietly = TRUE)) {
-                         # Get all available ColorBrewer palettes
                          all_palettes <- rownames(RColorBrewer::brewer.pal.info)
 
                          if (palette %in% all_palettes) {
-                           # Get max colors for this palette
                            max_colors <- RColorBrewer::brewer.pal.info[palette, "maxcolors"]
                            n_colors <- min(length(labels), max_colors)
-
-                           # Handle case where we need more colors than available
                            if (length(labels) > max_colors) {
                              warning("Palette '", palette, "' only supports ", max_colors,
                                      " colors, but ", length(labels), " are needed. ",
                                      "Using interpolation to generate additional colors.")
-                             # Use colorRampPalette for interpolation
                              base_colors <- RColorBrewer::brewer.pal(max_colors, palette)
-                             cols <- colorRampPalette(base_colors)(length(labels))
+                             cols <- grDevices::colorRampPalette(base_colors)(length(labels))
                            } else {
-                             # Use the palette directly
                              cols <- RColorBrewer::brewer.pal(max(3, n_colors), palette)[1:length(labels)]
                            }
 
@@ -245,7 +224,7 @@ create_categories <- function(breaks, labels = NULL, colors = NULL, palette = NU
       label_format = if(is.null(labels)) label_format else "custom",
       direction = direction
     ),
-    class = "travel_categories"
+    class = "travel_categories"  
   )
 }
 

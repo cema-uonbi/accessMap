@@ -8,6 +8,7 @@ create_bar_plot(
   summary_dt,
   categories,
   show_labels = TRUE,
+  title = NULL,
   color_labels = NULL
 )
 }
@@ -18,7 +19,9 @@ create_bar_plot(
 
 \item{show_labels}{Logical, whether to show percentage labels on bars}
 
-\item{color_labels}{Color for the bar plot labels}
+\item{title}{Title for the bar plot}
+
+\item{color_labels}{Color for the bar plot labels.}
 }
 \value{
 ggplot2 object

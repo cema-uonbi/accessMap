@@ -123,7 +123,6 @@ create_map <- function(data,
   } else if (!is.null(adm1)) {
     map_crs <- sf::st_crs(adm1)
   } else {
-    # No admin boundaries - assume WGS84 from coordinate range
     map_crs <- sf::st_crs(4326)
   }
   p <- p + ggplot2::coord_sf(crs = map_crs, expand = FALSE)
@@ -336,7 +335,8 @@ create_map <- function(data,
 #' @param summary_dt Summary statistics data.table
 #' @param categories Travel time categories with colors
 #' @param show_labels Logical, whether to show percentage labels on bars
-#' @param color_labels Color for the bar plot labels
+#' @param color_labels Color for the bar plot labels.
+#' @param title Title for the bar plot
 #' @return ggplot2 object
 #'
 #' @examples
@@ -353,6 +353,7 @@ create_map <- function(data,
 create_bar_plot <- function(summary_dt,
                             categories,
                             show_labels = TRUE,
+                            title = NULL,
                             color_labels = NULL) {
   if (is.null(color_labels)) {
     color_labels <- "black"
@@ -376,7 +377,8 @@ create_bar_plot <- function(summary_dt,
         r = 0,
         b = 0,
         l = 10
-      )
+      ),
+      plot.title = ggplot2::element_text(color = "black", hjust = .5)
     )
   if (show_labels) {
     p <- p + ggplot2::geom_text(
@@ -385,6 +387,9 @@ create_bar_plot <- function(summary_dt,
       hjust = 0,
       color = color_labels
     )
+  }
+  if (!is.null(title)) {
+    p <- p + ggplot2::ggtitle(title)
   }
   return(p)
 }

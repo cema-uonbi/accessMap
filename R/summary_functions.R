@@ -131,50 +131,40 @@ generate_admin_summary <- function(data, admin_sf,
   if (length(missing_cols) > 0) {
     stop("Missing required columns in data: ", paste(missing_cols, collapse = ", "))
   }
-
   if (progress) {
     cat(crayon::blue$bold("Generating admin-level summary statistics...\n"))
     cat(crayon::yellow("Note: Spatial overlay may take several minutes for large datasets\n"))
   }
-
   access_sf <- sf::st_as_sf(data, coords = c("x", "y"), crs = sf::st_crs(admin_sf))
-
   if (progress) {
     cat(crayon::blue(paste("Processing", nrow(access_sf), "points against",
                            nrow(admin_sf), "admin units...\n")))
   }
-
   admin_cols <- c(admin_name_cols)
   if (!is.null(admin_code_cols)) {
     admin_cols <- c(admin_cols, admin_code_cols)
   }
-
   admin_subset <- admin_sf[, admin_cols]
   overlay_result <- sf::st_join(access_sf, admin_subset, join = sf::st_within)
   overlay_dt <- data.table::as.data.table(overlay_result)
   overlay_dt[, geometry := NULL]
-
   if (length(admin_name_cols) == 1) {
     points_outside <- sum(is.na(overlay_dt[[admin_name_cols[1]]]))
   } else {
     points_outside <- sum(!complete.cases(overlay_dt[, admin_name_cols, with = FALSE]))
   }
-
   if (points_outside > 0 && progress) {
     cat(crayon::yellow("Warning:", points_outside,
                        "points fall outside admin boundaries and will be excluded\n"))
   }
-
   if (length(admin_name_cols) == 1) {
     overlay_dt <- overlay_dt[!is.na(get(admin_name_cols[1]))]
   } else {
     overlay_dt <- overlay_dt[complete.cases(overlay_dt[, admin_name_cols, with = FALSE])]
   }
-
   if (nrow(overlay_dt) == 0) {
     stop("No accessibility points overlap with admin boundaries. Check CRS alignment.")
   }
-
   if (progress) {
     cat(crayon::blue("Aggregating statistics by admin unit and travel time...\n"))
   }
