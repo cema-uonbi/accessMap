@@ -340,6 +340,8 @@ create_map <- function(data,
 #' @param show_labels Logical, whether to show percentage labels on bars
 #' @param color_labels Color for the bar plot labels.
 #' @param title Title for the bar plot
+#' @param column_color Color for the geom_col
+#' @param label_position Numeric position for percentage labels on bars (default: 8). Lower values move labels closer to the left edge, higher values move them further right.
 #' @return ggplot2 object
 #'
 #' @examples
@@ -358,7 +360,9 @@ create_bar_plot <- function(summary_dt,
                             show_labels = TRUE,
                             column_color = NA,
                             title = NULL,
-                            color_labels = NULL) {
+                            color_labels = NULL,
+                            label_position = 8
+                            ) {
   if (is.null(color_labels)) {
     color_labels <- "black"
   } else {
@@ -386,7 +390,7 @@ create_bar_plot <- function(summary_dt,
     )
   if (show_labels) {
     p <- p + ggplot2::geom_text(
-      ggplot2::aes(label = paste0(round(percentage, 1), "%"), y = (percentage + 24) / 3 * 0.7),
+      ggplot2::aes(label = paste0(round(percentage, 1), "%"), y = label_position),
       size = 4.5,
       hjust = 0,
       color = color_labels

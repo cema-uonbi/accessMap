@@ -315,7 +315,7 @@ accessibility <- function(points,
   bar_plot <- .call_args(
     create_bar_plot,
     base_args = list(national_summary, categories),
-    valid_extra_args = c("show_labels", "color_labels", "title"),
+    valid_extra_args = c("show_labels", "color_labels", "title", "label_position"),
     ...
   )
   if (progress) {

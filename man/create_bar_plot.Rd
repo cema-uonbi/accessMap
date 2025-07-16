@@ -10,7 +10,8 @@ create_bar_plot(
   show_labels = TRUE,
   column_color = NA,
   title = NULL,
-  color_labels = NULL
+  color_labels = NULL,
+  label_position = 8
 )
 }
 \arguments{
@@ -20,9 +21,13 @@ create_bar_plot(
 
 \item{show_labels}{Logical, whether to show percentage labels on bars}
 
+\item{column_color}{Color for the geom_col}
+
 \item{title}{Title for the bar plot}
 
 \item{color_labels}{Color for the bar plot labels.}
+
+\item{label_position}{Numeric position for percentage labels on bars (default: 8). Lower values move labels closer to the left edge, higher values move them further right.}
 }
 \value{
 ggplot2 object
