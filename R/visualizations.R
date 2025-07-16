@@ -17,6 +17,7 @@
 #' @param point_colors Named vector of colors for categorical color mapping (when point_color is column name)
 #' @param point_shapes Named vector of shapes for categorical shape mapping (when point_shape is column name)
 #' @param show_point_legend Logical, whether to show legend for points (default: TRUE)
+#' @param legend_position Position of the legend. Can be "bottom", "top", "left", "right", "none", or numeric vector c(x, y) for custom positioning (default: "bottom")
 #'
 #' @return ggplot2 object
 #'
@@ -106,7 +107,9 @@ create_map <- function(data,
                        point_size = 4.5,
                        point_colors = NULL,
                        point_shapes = NULL,
-                       show_point_legend = TRUE) {
+                       show_point_legend = TRUE, 
+                       legend_position = "bottom"
+                       ) {
   if (inherits(points, "matrix")) {
     points <- data.table::as.data.table(points)
   } else {
@@ -180,7 +183,7 @@ create_map <- function(data,
   p <- p +
     ggplot2::theme_void() +
     ggplot2::theme(
-      legend.position = "bottom",
+      legend.position = legend_position,
       legend.key = ggplot2::element_rect(color = "black", fill = NA),
       legend.text = ggplot2::element_text(color = "black", size = 12),
       legend.box = "horizontal"
@@ -353,6 +356,7 @@ create_map <- function(data,
 create_bar_plot <- function(summary_dt,
                             categories,
                             show_labels = TRUE,
+                            column_color = NA,
                             title = NULL,
                             color_labels = NULL) {
   if (is.null(color_labels)) {
@@ -366,7 +370,7 @@ create_bar_plot <- function(summary_dt,
                          y = (percentage + 24) / 3,
                          fill = travel_time
                        )) +
-    ggplot2::geom_col(show.legend = FALSE) +
+    ggplot2::geom_col(show.legend = FALSE, color = column_color) +
     ggplot2::coord_flip() +
     ggplot2::scale_fill_manual(values = categories$colors, na.value = "#d9d9d9") +
     ggplot2::theme_void() +

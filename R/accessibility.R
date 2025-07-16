@@ -307,7 +307,8 @@ accessibility <- function(points,
       "point_size",
       "point_colors",
       "point_shapes",
-      "show_point_legend"
+      "show_point_legend",
+      "legend_position"
     ),
     ...
   )

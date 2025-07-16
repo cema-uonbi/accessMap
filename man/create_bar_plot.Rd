@@ -8,6 +8,7 @@ create_bar_plot(
   summary_dt,
   categories,
   show_labels = TRUE,
+  column_color = NA,
   title = NULL,
   color_labels = NULL
 )

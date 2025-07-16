@@ -266,8 +266,8 @@ save_outputs(
   summary_dt = summary_stats,
   path = "./custom_outputs",
   name = "custom_analysis",
-  save_opts = list(dpi = 300, width = 2, height = 2),
-  formats = c("png", "pdf")
+  save_opoints = list(dpi = 300, width = 2, height = 2, units = "in"),
+  formats = c("png")
 )
 ```
 

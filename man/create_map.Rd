@@ -18,7 +18,8 @@ create_map(
   point_size = 4.5,
   point_colors = NULL,
   point_shapes = NULL,
-  show_point_legend = TRUE
+  show_point_legend = TRUE,
+  legend_position = "bottom"
 )
 }
 \arguments{
@@ -49,6 +50,8 @@ create_map(
 \item{point_shapes}{Named vector of shapes for categorical shape mapping (when point_shape is column name)}
 
 \item{show_point_legend}{Logical, whether to show legend for points (default: TRUE)}
+
+\item{legend_position}{Position of the legend. Can be "bottom", "top", "left", "right", "none", or numeric vector c(x, y) for custom positioning (default: "bottom")}
 }
 \value{
 ggplot2 object
