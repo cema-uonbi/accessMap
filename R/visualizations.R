@@ -386,7 +386,7 @@ create_bar_plot <- function(summary_dt,
     )
   if (show_labels) {
     p <- p + ggplot2::geom_text(
-      ggplot2::aes(label = paste0(round(percentage, 1), "%"), y = 15),
+      ggplot2::aes(label = paste0(round(percentage, 1), "%"), y = (percentage + 24) / 3 * 0.7),
       size = 4.5,
       hjust = 0,
       color = color_labels
