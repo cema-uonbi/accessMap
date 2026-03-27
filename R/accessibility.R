@@ -256,16 +256,12 @@ accessibility <- function(points,
     cat(crayon::blue$bold("Starting accessibility analysis...\n"))
   }
   points <- validate_points(points, lng_col, lat_col)
-  if (any(c(is.null(transitionMatrix), is.null(populationRaster), 
-            is.null(adm0), is.null(adm1)))) {
-    if (progress) {
-      cat(crayon::blue("Loading default Kenya datasets...\n"))
-    }
-    defaults <- load_default_data()
-    transitionMatrix <- transitionMatrix %||% defaults$transitionMatrix
-    populationRaster <- populationRaster %||% defaults$populationRaster  
-    adm0 <- adm0 %||% if (show_admin) defaults$adm0 else NULL
-    adm1 <- adm1 %||% if (show_admin) defaults$adm1 else NULL
+  if (is.null(transitionMatrix) || is.null(populationRaster) || is.null(adm0) || is.null(adm1)) {
+    if (progress) cat(crayon::blue("Loading default Kenya datasets...\n"))
+    if (is.null(transitionMatrix)) transitionMatrix <- accessMap::transition_matrix
+    if (is.null(populationRaster)) populationRaster <- accessMap::population_raster
+    if (is.null(adm0)) adm0 <- if (show_admin) accessMap::adm0 else NULL
+    if (is.null(adm1)) adm1 <- if (show_admin) accessMap::adm1 else NULL
   }
   if (is.null(categories)) {
     categories <- default_categories()
