@@ -35,22 +35,31 @@ compute_travel_cost <- function(points,
                                 transitionMatrix = NULL,
                                 populationRaster = NULL,
                                 progress = TRUE) {
-  if (progress) {
-    cat(crayon::blue$bold("Computing travel costs...\n"))
-  }
+  if (progress) cat(crayon::blue$bold("Computing travel costs...\n"))
+  
   access <- gdistance::accCost(transitionMatrix, points)
   raster::crs(access) <- raster::crs(populationRaster)
+  
   if (progress) {
     cat(crayon::green("[DONE] Travel time calculation completed\n"))
     cat(crayon::blue$bold("Resampling population raster...\n"))
   }
+  
+  if (!is.null(populationRaster) && !inherits(populationRaster, "SpatRaster")) {
+    populationRaster <- terra::rast(populationRaster)
+  }
+  if (!is.null(access) && !inherits(access, "SpatRaster")) {
+    access <- terra::rast(access)
+  }
+  
   pop_resampled <- raster::raster(terra::resample(
-    terra::rast(populationRaster),
-    terra::rast(access),
+    populationRaster,
+    access,
     method = "sum",
     threads = TRUE
   ))
-  list(access = access, pop = pop_resampled)
+  
+  list(access = raster(access), pop = pop_resampled)
 }
 
 #' Process accessibility data to data.table
